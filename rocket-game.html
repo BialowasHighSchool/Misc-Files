@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Quiz Defenders</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            overflow: hidden;
+            background-color: #000000;
+            color: #FFFFFF;
+            margin: 0;
+            padding: 0;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .start-title {
+            font-size: 3rem;
+            color: #FFFF00;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+        }
+
+        .start-instructions {
+            max-width: 600px;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .instruction-highlight {
+            color: #FFFF00;
+            font-weight: bold;
+        }
+
+        .start-button {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            background-color: #FFFF00;
+            color: #000;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .start-button:hover {
+            transform: scale(1.05);
+            background-color: #FFC000;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .score-container {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .score-label {
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+
+        .score-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #FFFF00;
+        }
+
+        .lives-container {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .lives-label {
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+
+        .lives-display {
+            display: flex;
+            gap: 5px;
+        }
+
+        .life-icon {
+            width: 20px;
+            height: 20px;
+            background-color: #FF0000;
+            border-radius: 50%;
+        }
+
+        .wave-container {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .wave-label {
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+
+        .wave-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #FFFF00;
+        }
+
+        .question-container {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            font-size: 1.5rem;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .question-instruction {
+            font-size: 0.9rem;
+            margin-top: 5px;
+            color: #FFFF00;
+            font-style: italic;
+        }
+
+        .feedback-text {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
+        .feedback-text.correct {
+            color: #00FF00;
+            background-color: rgba(0, 128, 0, 0.3);
+        }
+
+        .feedback-text.incorrect {
+            color: #FF0000;
+            background-color: rgba(128, 0, 0, 0.3);
+        }
+
+        .feedback-text.visible {
+            opacity: 1;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 500;
+            display: none;
+        }
+
+        .game-over-card {
+            background-color: rgba(10, 10, 42, 0.9);
+            border: 3px solid #FFFF00;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .game-over-title {
+            font-size: 2.5rem;
+            color: #FFFF00;
+            margin-bottom: 20px;
+        }
+
+        .game-over-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #FFFF00;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #FFFFFF;
+            margin-top: 5px;
+        }
+
+        .play-again-button {
+            padding: 12px 30px;
+            background-color: #FFFF00;
+            color: black;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: transform 0.2s;
+            margin-top: 20px;
+        }
+
+        .play-again-button:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .start-title {
+                font-size: 2rem;
+            }
+
+            .start-instructions {
+                font-size: 1rem;
+            }
+
+            .game-ui {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .question-container {
+                font-size: 1.2rem;
+                padding: 10px;
+            }
+        }
+
+        /* Stars animation */
+        .stars {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            background: white;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <h2>Loading game configuration...</h2>
+    </div>
+
+    <div id="start-screen">
+        <h1 class="start-title">Space Quiz Defenders</h1>
+        <p class="start-instructions">
+            Control your ship with <span class="instruction-highlight">LEFT</span> and <span class="instruction-highlight">RIGHT</span> arrow keys. 
+            Shoot with <span class="instruction-highlight">SPACEBAR</span> or mouse click.<br><br>
+            Each wave has 4 alien answers. <span class="instruction-highlight">Shoot ONLY the INCORRECT answers!</span> 
+            Do NOT shoot the correct answer alien or you'll lose a life.<br><br>
+            You have 3 lives. Enemies get faster with each wave cycle!
+        </p>
+        <button class="start-button">Start Game</button>
+    </div>
+
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+
+        <div class="game-ui">
+            <div class="score-container">
+                <div class="score-label">Score:</div>
+                <div class="score-value" id="score-display">0</div>
+            </div>
+
+            <div class="wave-container">
+                <div class="wave-label">Wave:</div>
+                <div class="wave-value" id="wave-display">1</div>
+            </div>
+
+            <div class="lives-container">
+                <div class="lives-label">Lives:</div>
+                <div class="lives-display" id="lives-display">
+                    <div class="life-icon"></div>
+                    <div class="life-icon"></div>
+                    <div class="life-icon"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="question-container" id="question-display">
+            Loading question...
+            <div class="question-instruction">Shoot ALL incorrect answers. Do NOT shoot the correct one!</div>
+        </div>
+
+        <div class="feedback-text" id="feedback-text"></div>
+
+        <div id="game-over">
+            <div class="game-over-card">
+                <h2 class="game-over-title">Game Over</h2>
+                <p>You've lost all your lives!</p>
+                
+                <div class="game-over-stats">
+                    <div class="stat">
+                        <div class="stat-value" id="final-score">0</div>
+                        <div class="stat-label">Score</div>
+                    </div>
+                    
+                    <div class="stat">
+                        <div class="stat-value" id="waves-completed">0</div>
+                        <div class="stat-label">Waves</div>
+                    </div>
+                    
+                    <div class="stat">
+                        <div class="stat-value" id="correct-answers">0</div>
+                        <div class="stat-label">Correct</div>
+                    </div>
+                </div>
+                
+                <button class="play-again-button">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load the config loader script -->
+    <script src="https://learnfun-scripts.studyfetch.com/config-loader.js?v2=true"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load the game configuration
+            GameConfigLoader.load()
+                .then(config => {
+                    // Hide loading screen
+                    document.getElementById('loading-screen').style.display = 'none';
+                    
+                    // Initialize game with the loaded configuration
+                    initGame(config);
+                })
+                .catch(error => {
+                    // Display error message
+                    document.getElementById('loading-screen').innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <h2>Error Loading Configuration</h2>
+                            <p>${error.message}</p>
+                            <p>Please check the URL parameters:</p>
+                            <code>?configfile=path/to/config.json</code> or <code>?configbase64=encodedConfigData</code>
+                        </div>
+                    `;
+                    console.error('Failed to load configuration:', error);
+                });
+            
+            function initGame(config) {
+                // Apply theme from configuration
+                applyTheme(config);
+                
+                // Game canvas and context
+                const canvas = document.getElementById('game-canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set up high DPI canvas for better rendering
+                let pixelRatio = window.devicePixelRatio || 1;
+                
+                // UI elements
+                const startScreen = document.getElementById('start-screen');
+                const startButton = document.querySelector('.start-button');
+                const scoreDisplay = document.getElementById('score-display');
+                const waveDisplay = document.getElementById('wave-display');
+                const livesDisplay = document.getElementById('lives-display');
+                const questionDisplay = document.getElementById('question-display');
+                const feedbackText = document.getElementById('feedback-text');
+                const gameOver = document.getElementById('game-over');
+                const finalScore = document.getElementById('final-score');
+                const wavesCompleted = document.getElementById('waves-completed');
+                const correctAnswersElem = document.getElementById('correct-answers');
+                const playAgainButton = document.querySelector('.play-again-button');
+                
+                // Game variables
+                let gameRunning = false;
+                let score = 0;
+                let wave = 1;
+                let lives = 3;
+                let correctAnswers = 0;
+                let currentQuestionIndex = 0;
+                let difficultyMultiplier = 1.0;
+                let cycleCount = 0;
+                let isFirstLoad = true; // Add initialization flag
+                
+                // Ship properties
+                let ship = {
+                    x: 0,
+                    y: 0,
+                    width: 110,
+                    height: 66,
+                    speed: 6,
+                    isMovingLeft: false,
+                    isMovingRight: false,
+                    isFiring: false,
+                    lastFireTime: 0,
+                    fireRate: 300, // ms between shots
+                    image: null
+                };
+                
+                // Game entities
+                let answerAliens = [];
+                let projectiles = [];
+                let alienProjectiles = [];
+                let explosions = [];
+                let formationPoints = [];
+                
+                // Game timing
+                let formationSwitchTime = 5000; // ms between formation changes
+                let lastFormationChange = 0;
+                let alienDiveChance = 0.002; // chance per frame that an alien will dive
+                let alienShootChance = 0.005; // chance per frame that an alien will shoot
+                let lastFrameTime = 0;
+                
+                // Stars for background
+                let stars = [];
+                
+                // Load images
+                const shipImage = new Image();
+                shipImage.src = config.skins?.ship || 'ship.png';
+                
+                const alienImage = new Image();
+                alienImage.src = config.skins?.alien || 'alien.png';
+                
+                const projectileImage = new Image();
+                projectileImage.src = config.skins?.projectile || 'projectile.png';
+                
+                const explosionImage = new Image();
+                explosionImage.src = config.skins?.explosion || 'explosion.png';
+                
+                // Set up event listeners
+                startButton.addEventListener('click', startGame);
+                playAgainButton.addEventListener('click', restartGame);
+                
+                document.addEventListener('keydown', handleKeyDown);
+                document.addEventListener('keyup', handleKeyUp);
+                canvas.addEventListener('click', handleCanvasClick);
+                
+                // Initialize canvas size
+                function resizeCanvas() {
+                    // Get the display size
+                    const displayWidth = window.innerWidth;
+                    const displayHeight = window.innerHeight;
+                    
+                    // Set the canvas size with pixel ratio for high-res displays
+                    canvas.width = displayWidth * pixelRatio;
+                    canvas.height = displayHeight * pixelRatio;
+                    
+                    // Set the display size to match window size
+                    canvas.style.width = displayWidth + 'px';
+                    canvas.style.height = displayHeight + 'px';
+                    
+                    // Scale the context to handle high DPI displays
+                    ctx.scale(pixelRatio, pixelRatio);
+                    
+                    // Reset ship position on resize
+                    if (ship) {
+                        ship.x = displayWidth / 2 - ship.width / 2;
+                        ship.y = displayHeight - ship.height - 30;
+                    }
+                    
+                    // Recalculate formation points
+                    calculateFormationPoints();
+                }
+                
+                // Window resize event
+                window.addEventListener('resize', resizeCanvas);
+                
+                // Apply theme from configuration
+                function applyTheme(config) {
+                    // Set text content
+                    document.querySelector('.start-title').textContent = config.text?.title || 'Space Quiz Defenders';
+                    document.querySelector('.game-over-title').textContent = config.text?.gameOverTitle || 'Game Over';
+                    document.querySelector('.score-label').textContent = config.text?.scoreLabel || 'Score:';
+                    document.querySelector('.wave-label').textContent = config.text?.waveLabel || 'Wave:';
+                    document.querySelector('.lives-label').textContent = config.text?.livesLabel || 'Lives:';
+                    
+                    // Apply background image if specified in config
+                    if (config.skins?.background) {
+                        document.body.style.backgroundImage = `url(${config.skins.background})`;
+                    }
+                }
+                
+                // Start game
+                function startGame() {
+                    startScreen.style.display = 'none';
+                    gameRunning = true;
+                    
+                    // Initialize game objects
+                    resetGame();
+                    
+                    // Create stars
+                    createStars();
+                    
+                    // Start game loop
+                    requestAnimationFrame(gameLoop);
+                }
+                
+                // Restart game
+                function restartGame() {
+                    gameOver.style.display = 'none';
+                    // Make sure we clear all game entities
+                    answerAliens = [];
+                    projectiles = [];
+                    alienProjectiles = [];
+                    explosions = [];
+                    formationPoints = [];
+                    
+                    // Reset game state
+                    resetGame();
+                    gameRunning = true;
+                    lastFrameTime = Date.now();
+                }
+                
+                // Reset game state
+                function resetGame() {
+                    score = 0;
+                    wave = 1;
+                    lives = 3;
+                    correctAnswers = 0;
+                    currentQuestionIndex = 0;
+                    difficultyMultiplier = 1.0;
+                    cycleCount = 0;
+                    lastFormationChange = Date.now();
+                    isFirstLoad = true; // Reset initialization flag
+                    
+                    // Update UI
+                    scoreDisplay.textContent = score;
+                    waveDisplay.textContent = wave;
+                    updateLivesDisplay();
+                    feedbackText.classList.remove('visible');
+                    
+                    // Reset ship
+                    resizeCanvas();
+                    ship.isMovingLeft = false;
+                    ship.isMovingRight = false;
+                    ship.isFiring = false;
+                    ship.lastFireTime = 0;
+                    
+                    // Position ship a bit higher from bottom to account for larger size
+                    ship.y = canvas.height / pixelRatio - ship.height - 30;
+                    
+                    // Clear all game entities
+                    answerAliens = [];
+                    projectiles = [];
+                    alienProjectiles = [];
+                    explosions = [];
+                    formationPoints = []; // Clear formation points
+                    
+                    // Initialize formation points
+                    calculateFormationPoints();
+                    
+                    // Initialize first question
+                    loadNextQuestion();
+                }
+                
+                // Update lives display
+                function updateLivesDisplay() {
+                    livesDisplay.innerHTML = '';
+                    for (let i = 0; i < lives; i++) {
+                        const lifeIcon = document.createElement('div');
+                        lifeIcon.className = 'life-icon';
+                        livesDisplay.appendChild(lifeIcon);
+                    }
+                }
+                
+                // Create stars for background
+                function createStars() {
+                    stars = [];
+                    const starCount = 100;
+                    
+                    for (let i = 0; i < starCount; i++) {
+                        stars.push({
+                            x: Math.random() * canvas.width,
+                            y: Math.random() * canvas.height,
+                            size: Math.random() * 2 + 1,
+                            speed: Math.random() * 0.5 + 0.1
+                        });
+                    }
+                }
+                
+                // Calculate formation points
+                function calculateFormationPoints() {
+                    formationPoints = [];
+                    
+                    // Create a 2x2 grid formation for 4 answer aliens
+                    const cols = 2;
+                    const rows = 2;
+                    // Use only 40% of screen width instead of full thirds
+                    const screenCenter = (canvas.width / pixelRatio) / 2;
+                    const horizSpacing = (canvas.width / pixelRatio) * 0.2; // 20% of screen width for spacing
+                    const vertSpacing = 80;
+                    const startX = screenCenter - horizSpacing / 2;
+                    const startY = 160;
+                    
+                    for (let row = 0; row < rows; row++) {
+                        for (let col = 0; col < cols; col++) {
+                            formationPoints.push({
+                                x: startX + col * horizSpacing - 25,
+                                y: startY + row * vertSpacing,
+                                taken: false
+                            });
+                        }
+                    }
+                }
+                
+                // Load next question and create answer aliens
+                function loadNextQuestion() {
+                    // Clear any existing aliens
+                    answerAliens = [];
+                    
+                    // Get current question
+                    const currentQuestion = config.questions[currentQuestionIndex];
+                    
+                    // Display question while preserving the instruction text
+                    questionDisplay.innerHTML = `
+                        ${currentQuestion.text}
+                        <div class="question-instruction">Shoot ALL incorrect answers. Do NOT shoot the correct one!</div>
+                    `;
+                    
+                    // Free up all formation points
+                    formationPoints.forEach(point => point.taken = false);
+                    
+                    // Move to next question for next wave
+                    currentQuestionIndex = (currentQuestionIndex + 1) % config.questions.length;
+                    
+                    // Check if we're starting a new cycle
+                    const isNewCycle = currentQuestionIndex === 0 && wave > 1;
+                    
+                    // Only increment wave if not the first load
+                    if (!isFirstLoad) {
+                        wave++;
+                        waveDisplay.textContent = wave;
+
+                        // Show wave 2 announcement for shooting
+                        if (wave === 2) {
+                            showFeedback("Warning: Enemies will now shoot back!", 'info');
+                        }
+                    } else {
+                        isFirstLoad = false; // Mark first load as complete
+                    }
+                    
+                    // Create answer aliens in formation
+                    createAnswerAliens(currentQuestion);
+                    
+                    // Increase difficulty only after wave 2 and at the start of each cycle
+                    if (isNewCycle && wave > 2) {
+                        cycleCount++;
+                        difficultyMultiplier = 1.0 + (cycleCount * 0.2);
+                        alienDiveChance = Math.min(0.002 + (cycleCount * 0.001), 0.01); // Cap at 0.01
+                        alienShootChance = Math.min(0.005 + (cycleCount * 0.001), 0.02); // Cap at 0.02
+                        showFeedback(`Cycle ${cycleCount}! Aliens move faster and attack more!`, 'info');
+                    }
+                }
+                
+                // Create answer aliens for current question
+                function createAnswerAliens(question) {
+                    // Shuffle answer positions
+                    const positions = [...formationPoints];
+                    shuffleArray(positions);
+                    
+                    // Create aliens for each answer
+                    for (let i = 0; i < 4; i++) {
+                        const position = positions[i];
+                        position.taken = true;
+                        
+                        // Increase base speed with wave difficulty
+                        const baseSpeed = 1.0 + (cycleCount * 0.15);
+                        
+                        // Create alien
+                        answerAliens.push({
+                            text: question.options[i],
+                            x: position.x,
+                            y: position.y,
+                            targetX: position.x,
+                            targetY: position.y,
+                            width: 50,
+                            height: 50,
+                            speed: baseSpeed * difficultyMultiplier,
+                            state: 'formation', // formation, diving, returning
+                            formationPoint: position,
+                            divingTimer: 0,
+                            shootTimer: 0,
+                            lastShot: 0,
+                            fireRate: Math.max(2000 - (cycleCount * 300), 800), // Decreases with difficulty
+                            isCorrectAnswer: i === question.correctOptionIndex,
+                            labelPosition: { 
+                                x: position.x + 25, // Center of alien
+                                y: position.y + 70  // Position below alien for better visibility
+                            }
+                        });
+                    }
+                }
+                
+                // Utility function to shuffle an array
+                function shuffleArray(array) {
+                    for (let i = array.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [array[i], array[j]] = [array[j], array[i]];
+                    }
+                    return array;
+                }
+                
+                // Handle keyboard input
+                function handleKeyDown(e) {
+                    if (!gameRunning) return;
+                    
+                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                        ship.isMovingLeft = true;
+                    }
+                    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                        ship.isMovingRight = true;
+                    }
+                    if (e.key === ' ' || e.key === 'Spacebar') {
+                        fireProjectile();
+                    }
+                }
+                
+                function handleKeyUp(e) {
+                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                        ship.isMovingLeft = false;
+                    }
+                    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                        ship.isMovingRight = false;
+                    }
+                }
+                
+                // Handle canvas click
+                function handleCanvasClick(e) {
+                    if (!gameRunning) return;
+                    
+                    fireProjectile();
+                }
+                
+                // Fire projectile
+                function fireProjectile() {
+                    const currentTime = Date.now();
+                    
+                    // Check fire rate limit
+                    if (currentTime - ship.lastFireTime < ship.fireRate) {
+                        return;
+                    }
+                    
+                    ship.lastFireTime = currentTime;
+                    
+                    // Create new projectile (adjusted for larger ship)
+                    projectiles.push({
+                        x: ship.x + ship.width / 2 - 7,
+                        y: ship.y - 24,
+                        width: 14,
+                        height: 28,
+                        speed: 10
+                    });
+                }
+                
+                // Create explosion effect
+                function createExplosion(x, y) {
+                    explosions.push({
+                        x: x,
+                        y: y,
+                        width: 50,
+                        height: 50,
+                        frame: 0,
+                        maxFrames: 10
+                    });
+                }
+                
+                // Show feedback
+                function showFeedback(text, type) {
+                    feedbackText.textContent = text;
+                    feedbackText.className = 'feedback-text';
+                    
+                    if (type) {
+                        feedbackText.classList.add(type);
+                    }
+                    
+                    feedbackText.classList.add('visible');
+                    
+                    // Hide after delay
+                    setTimeout(() => {
+                        feedbackText.classList.remove('visible');
+                    }, 1500);
+                }
+                
+                // Check if all incorrect aliens are destroyed
+                function checkWaveComplete() {
+                    // Count remaining incorrect aliens
+                    const remainingIncorrect = answerAliens.filter(alien => !alien.isCorrectAnswer).length;
+                    
+                    if (remainingIncorrect === 0) {
+                        // All incorrect aliens destroyed
+                        // Add score bonus for completing wave
+                        score += 200;
+                        scoreDisplay.textContent = score;
+                        
+                        // Show success feedback
+                        showFeedback(`Wave Complete! +200 points`, 'correct');
+                        
+                        // Remove the correct answer alien with explosion effect
+                        const correctAlien = answerAliens.find(alien => alien.isCorrectAnswer);
+                        if (correctAlien) {
+                            createExplosion(correctAlien.x, correctAlien.y);
+                        }
+                        
+                        // Clear all aliens and load next question
+                        setTimeout(() => {
+                            answerAliens = [];
+                            loadNextQuestion();
+                        }, 1500);
+                        
+                        return true;
+                    }
+                    
+                    return false;
+                }
+                
+                // Update game state
+                function update() {
+                    if (!gameRunning) return;
+                    
+                    // Calculate delta time for frame-independent movement
+                    const currentTime = Date.now();
+                    const deltaTime = currentTime - lastFrameTime;
+                    lastFrameTime = currentTime;
+                    
+                    // Update ship position
+                    if (ship.isMovingLeft) {
+                        ship.x -= ship.speed;
+                        if (ship.x < 0) {
+                            ship.x = 0;
+                        }
+                    }
+                    if (ship.isMovingRight) {
+                        ship.x += ship.speed;
+                        if (ship.x + ship.width > canvas.width) {
+                            ship.x = canvas.width - ship.width;
+                        }
+                    }
+                    
+                    // Update player projectiles
+                    for (let i = projectiles.length - 1; i >= 0; i--) {
+                        projectiles[i].y -= projectiles[i].speed;
+                        
+                        // Remove projectiles that go off screen
+                        if (projectiles[i].y + projectiles[i].height < 0) {
+                            projectiles.splice(i, 1);
+                            continue;
+                        }
+                        
+                        // Check collisions with aliens
+                        for (let j = answerAliens.length - 1; j >= 0; j--) {
+                            if (checkCollision(projectiles[i], answerAliens[j])) {
+                                // Create explosion
+                                createExplosion(answerAliens[j].x, answerAliens[j].y);
+                                
+                                // Check if it was the correct answer
+                                if (answerAliens[j].isCorrectAnswer) {
+                                    // Shot the correct answer - penalize!
+                                    lives--;
+                                    updateLivesDisplay();
+                                    showFeedback(`Wrong! That was the CORRECT answer!`, 'incorrect');
+                                    
+                                    // Check if game over
+                                    if (lives <= 0) {
+                                        endGame();
+                                        return;
+                                    }
+                                } else {
+                                    // Shot incorrect answer - good!
+                                    score += 100;
+                                    scoreDisplay.textContent = score;
+                                    showFeedback(`Good! +100 points`, 'correct');
+                                    correctAnswers++;
+                                }
+                                
+                                // Remove the alien and projectile
+                                answerAliens.splice(j, 1);
+                                projectiles.splice(i, 1);
+                                
+                                // Check if wave is complete
+                                checkWaveComplete();
+                                
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Update alien projectiles
+                    for (let i = alienProjectiles.length - 1; i >= 0; i--) {
+                        alienProjectiles[i].y += alienProjectiles[i].speed;
+                        
+                        // Remove projectiles that go off screen
+                        if (alienProjectiles[i].y > canvas.height) {
+                            alienProjectiles.splice(i, 1);
+                            continue;
+                        }
+                        
+                        // Check collision with player ship
+                        if (checkCollision(alienProjectiles[i], ship)) {
+                            // Create explosion
+                            createExplosion(ship.x, ship.y);
+                            
+                            // Lose a life
+                            lives--;
+                            updateLivesDisplay();
+                            showFeedback(`Shot by alien!`, 'incorrect');
+                            
+                            // Remove the projectile
+                            alienProjectiles.splice(i, 1);
+                            
+                            // Check if game over
+                            if (lives <= 0) {
+                                lives++;
+                                updateLivesDisplay();
+                                showFeedback(`You have plot armor!`, 'correct');
+                            }
+                            
+                            break;
+                        }
+                    }
+                    
+                    // Update aliens and alien shooting
+                    updateAliens(currentTime);
+                    
+                    // Check for collisions between ship and aliens
+                    for (let i = answerAliens.length - 1; i >= 0; i--) {
+                        if (checkCollision(ship, answerAliens[i])) {
+                            // Create explosion
+                            createExplosion(ship.x, ship.y);
+                            
+                            // Lose a life
+                            lives--;
+                            updateLivesDisplay();
+                            showFeedback(`You were hit!`, 'incorrect');
+                            
+                            // Remove the alien
+                            answerAliens.splice(i, 1);
+                            
+                            // Check if wave is complete
+                            if (checkWaveComplete()) {
+                                break;
+                            }
+                            
+                            // Check if game over
+                            if (lives <= 0) {
+                                endGame();
+                                return;
+                            }
+                            
+                            break;
+                        }
+                    }
+                    
+                    // Update explosions
+                    for (let i = explosions.length - 1; i >= 0; i--) {
+                        explosions[i].frame++;
+                        if (explosions[i].frame >= explosions[i].maxFrames) {
+                            explosions.splice(i, 1);
+                        }
+                    }
+                    
+                    // Update stars
+                    stars.forEach(star => {
+                        star.y += star.speed;
+                        
+                        if (star.y > canvas.height) {
+                            star.y = 0;
+                            star.x = Math.random() * canvas.width;
+                        }
+                    });
+                    
+                    // Randomly change formation
+                    if (currentTime - lastFormationChange > formationSwitchTime) {
+                        lastFormationChange = currentTime;
+                        calculateFormationPoints(); // Recalculate for variety
+                        
+                        // Reassign formation points to aliens
+                        answerAliens.forEach(alien => {
+                            if (alien.state === 'formation') {
+                                alien.formationPoint.taken = false;
+                                
+                                // Find a new available point
+                                const availablePoints = formationPoints.filter(p => !p.taken);
+                                if (availablePoints.length > 0) {
+                                    const newPoint = availablePoints[Math.floor(Math.random() * availablePoints.length)];
+                                    newPoint.taken = true;
+                                    
+                                    alien.formationPoint = newPoint;
+                                    alien.targetX = newPoint.x;
+                                    alien.targetY = newPoint.y;
+                                }
+                            }
+                        });
+                    }
+                }
+                
+                // Update aliens
+                function updateAliens(currentTime) {
+                    const screenCenterX = (canvas.width / pixelRatio) / 2;
+                    
+                    answerAliens.forEach(alien => {
+                        // Apply speed multiplier based on difficulty
+                        const effectiveSpeed = alien.speed * difficultyMultiplier;
+                        
+                        // Calculate screen boundaries, accounting for alien size
+                        const minX = 0;
+                        const maxX = canvas.width / pixelRatio - alien.width;
+                        const minY = 0;
+                        const maxY = (canvas.height / pixelRatio) * 0.7;
+                        
+                        // Calculate distance from center
+                        const distanceFromCenter = Math.abs(alien.x + alien.width/2 - screenCenterX);
+                        const centerAttractionForce = Math.min(distanceFromCenter / 500, 0.5); // Max 50% influence
+                        
+                        switch (alien.state) {
+                            case 'formation':
+                                // Move toward formation position
+                                const dx = alien.targetX - alien.x;
+                                const dy = alien.targetY - alien.y;
+                                const distance = Math.sqrt(dx * dx + dy * dy);
+                                
+                                if (distance > 1) {
+                                    // Add center attraction when far from center
+                                    let moveX = (dx / distance) * effectiveSpeed;
+                                    if (distanceFromCenter > canvas.width / 8) { // If far from center
+                                        const centerForce = (screenCenterX - (alien.x + alien.width/2)) * centerAttractionForce;
+                                        moveX += centerForce * 0.02; // Subtle center attraction
+                                    }
+                                    
+                                    alien.x += moveX;
+                                    alien.y += (dy / distance) * effectiveSpeed;
+                                } else {
+                                    alien.x = alien.targetX;
+                                    alien.y = alien.targetY;
+                                }
+                                
+                                // Constrain to screen boundaries
+                                alien.x = Math.max(minX, Math.min(maxX, alien.x));
+                                
+                                // Random chance to start diving - increases with wave difficulty
+                                const diveProbability = alienDiveChance * difficultyMultiplier * (1 + (cycleCount * 0.5));
+                                if (Math.random() < diveProbability) {
+                                    alien.state = 'diving';
+                                    alien.divingTimer = 0;
+                                }
+                                
+                                // Check if alien should shoot - only after wave 1
+                                if (wave > 1 && currentTime - alien.lastShot > alien.fireRate) {
+                                    const shootProbability = alienShootChance * difficultyMultiplier * (1 + (cycleCount * 0.3));
+                                    if (Math.random() < shootProbability) {
+                                        alienFireProjectile(alien);
+                                        alien.lastShot = currentTime;
+                                    }
+                                }
+                                break;
+                                
+                            case 'diving':
+                                // Dive toward the player with center bias
+                                alien.divingTimer++;
+                                
+                                // Calculate trajectory toward player with center bias
+                                let targetX = ship.x + ship.width / 2;
+                                // Add center attraction to diving
+                                if (distanceFromCenter > canvas.width / 6) {
+                                    targetX = targetX * (1 - centerAttractionForce) + screenCenterX * centerAttractionForce;
+                                }
+                                const targetY = Math.min(ship.y, maxY);
+                                
+                                const diveX = targetX - alien.x;
+                                const diveY = targetY - alien.y;
+                                const diveDistance = Math.sqrt(diveX * diveX + diveY * diveY);
+                                
+                                if (diveDistance > 1) {
+                                    const diveSpeedMultiplier = 1.5 + (cycleCount * 0.1);
+                                    let newX = alien.x + (diveX / diveDistance) * effectiveSpeed * diveSpeedMultiplier;
+                                    let newY = alien.y + (diveY / diveDistance) * effectiveSpeed * diveSpeedMultiplier;
+                                    
+                                    // Constrain to screen boundaries
+                                    alien.x = Math.max(minX, Math.min(maxX, newX));
+                                    alien.y = Math.max(minY, Math.min(maxY, newY));
+                                }
+                                
+                                // Higher chance to shoot while diving - only after wave 1
+                                if (wave > 1 && currentTime - alien.lastShot > alien.fireRate) {
+                                    const diveShootProbability = alienShootChance * 3 * difficultyMultiplier;
+                                    if (Math.random() < diveShootProbability) {
+                                        alienFireProjectile(alien);
+                                        alien.lastShot = currentTime;
+                                    }
+                                }
+                                
+                                // Return to formation after diving for a while or reaching screen boundary
+                                if (alien.divingTimer > 120 || alien.y >= maxY) {
+                                    alien.state = 'returning';
+                                }
+                                break;
+                                
+                            case 'returning':
+                                // Return to formation position with center bias
+                                let returnTargetX = alien.formationPoint.x;
+                                // Add center attraction when returning
+                                if (distanceFromCenter > canvas.width / 6) {
+                                    returnTargetX = returnTargetX * (1 - centerAttractionForce) + screenCenterX * centerAttractionForce;
+                                }
+                                
+                                const returnDx = returnTargetX - alien.x;
+                                const returnDy = alien.formationPoint.y - alien.y;
+                                const returnDistance = Math.sqrt(returnDx * returnDx + returnDy * returnDy);
+                                
+                                if (returnDistance > 1) {
+                                    const returnSpeedMultiplier = 1.2;
+                                    let newX = alien.x + (returnDx / returnDistance) * effectiveSpeed * returnSpeedMultiplier;
+                                    let newY = alien.y + (returnDy / returnDistance) * effectiveSpeed * returnSpeedMultiplier;
+                                    
+                                    // Constrain to screen boundaries
+                                    alien.x = Math.max(minX, Math.min(maxX, newX));
+                                    alien.y = Math.max(minY, Math.min(maxY, newY));
+                                } else {
+                                    alien.x = alien.formationPoint.x;
+                                    alien.y = alien.formationPoint.y;
+                                    alien.state = 'formation';
+                                }
+                                break;
+                        }
+                        
+                        // Update label position to follow alien
+                        alien.labelPosition = {
+                            x: alien.x + alien.width / 2,
+                            y: alien.y + alien.height + 20
+                        };
+                    });
+                }
+                
+                // Make an alien fire a projectile
+                function alienFireProjectile(alien) {
+                    // Create new projectile
+                    alienProjectiles.push({
+                        x: alien.x + alien.width / 2 - 5,
+                        y: alien.y + alien.height,
+                        width: 8,
+                        height: 16,
+                        speed: 5 + (cycleCount * 0.5) // Projectile speed increases with difficulty
+                    });
+                }
+                
+                // Check collision between two objects
+                function checkCollision(obj1, obj2) {
+                    return obj1 && obj2 &&
+                           obj1.x < obj2.x + obj2.width &&
+                           obj1.x + obj1.width > obj2.x &&
+                           obj1.y < obj2.y + obj2.height &&
+                           obj1.y + obj1.height > obj2.y;
+                }
+                
+                // End game
+                function endGame() {
+                    gameRunning = false;
+                    
+                    // Post high score to API if userToken and apiUrl exist
+                    if (GameConfigLoader.getUserToken() && GameConfigLoader.getApiUrl()) {
+                        console.log("Submitting high score:", score);
+                        GameConfigLoader.postMessage('highScore', { score: score })
+                            .then(response => console.log("Score submitted successfully:", response))
+                            .catch(error => console.error("Failed to submit score:", error));
+                    } else {
+                        console.log("Not submitting score: missing userToken or apiUrl");
+                    }
+                    
+                    // Update final stats
+                    finalScore.textContent = score;
+                    wavesCompleted.textContent = wave - 1; // Wave 1 is the first wave
+                    correctAnswersElem.textContent = correctAnswers;
+                    
+                    // Show game over screen
+                    gameOver.style.display = 'flex';
+                }
+                
+                // Draw game
+                function draw() {
+                    // Clear canvas with background color or transparent if using background image
+                    if (config.skins?.background) {
+                        // If using background image, use transparent canvas
+                        ctx.clearRect(0, 0, canvas.width / pixelRatio, canvas.height / pixelRatio);
+                    } else {
+                        // Use black background for Rocket Defender
+                        ctx.fillStyle = '#000000';
+                        ctx.fillRect(0, 0, canvas.width / pixelRatio, canvas.height / pixelRatio);
+                    }
+                    
+                    // Draw stars
+                    ctx.fillStyle = '#FFFFFF';
+                    stars.forEach(star => {
+                        ctx.beginPath();
+                        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    
+                    // Draw aliens
+                    answerAliens.forEach(alien => {
+                        // Draw alien with image smoothing for high quality
+                        if (alienImage.complete && alienImage.naturalWidth > 0) {
+                            ctx.save();
+                            // All aliens should use the incorrect color for shadow
+                            ctx.shadowColor = config.colorTheme?.incorrect || '#FF0000';
+                            ctx.shadowBlur = 10;
+                            ctx.shadowOffsetX = 0;
+                            ctx.shadowOffsetY = 5;
+                            
+                            ctx.imageSmoothingEnabled = true;
+                            ctx.imageSmoothingQuality = 'high';
+                            ctx.drawImage(alienImage, alien.x, alien.y, alien.width, alien.height);
+                            
+                            ctx.restore();
+                        } else {
+                            // Fallback - color based on correct/incorrect with shadow
+                            ctx.save();
+                            ctx.shadowColor = alien.isCorrectAnswer 
+                                ? (config.colorTheme?.correct || '#00FF00') 
+                                : (config.colorTheme?.incorrect || '#FF0000');
+                            ctx.shadowBlur = 10;
+                            ctx.shadowOffsetX = 0;
+                            ctx.shadowOffsetY = 5;
+                            
+                            ctx.fillStyle = alien.isCorrectAnswer 
+                                ? (config.colorTheme?.correct || '#00FF00') 
+                                : (config.colorTheme?.incorrect || '#FF0000');
+                            ctx.fillRect(alien.x, alien.y, alien.width, alien.height);
+                            
+                            ctx.restore();
+                        }
+                        
+                        // Draw answer text with enhanced visibility
+                        const labelX = alien.labelPosition.x;
+                        const labelY = alien.labelPosition.y;
+                        
+                        // Draw text background/outline for better visibility
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                        const textWidth = ctx.measureText(alien.text).width;
+                        ctx.fillRect(labelX - textWidth/2 - 5, labelY - 14, textWidth + 10, 20);
+                        
+                        // Draw text border
+                        ctx.strokeStyle = '#FFFF00';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(labelX - textWidth/2 - 5, labelY - 14, textWidth + 10, 20);
+                        
+                        // Draw text with larger, more visible font
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.font = 'bold 16px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(alien.text, labelX, labelY - 4);
+                    });
+                    
+                    // Draw player projectiles
+                    projectiles.forEach(projectile => {
+                        if (projectileImage.complete && projectileImage.naturalWidth > 0) {
+                            // Draw glow effect
+                            ctx.save();
+                            ctx.shadowColor = config.colorTheme?.projectile || config.colorTheme?.player || '#FFFF00';
+                            ctx.shadowBlur = 15;
+                            ctx.shadowOffsetX = 0;
+                            ctx.shadowOffsetY = 0;
+                            
+                            // Draw the projectile with glow
+                            ctx.imageSmoothingEnabled = true;
+                            ctx.imageSmoothingQuality = 'high';
+                            ctx.drawImage(projectileImage, projectile.x, projectile.y, projectile.width, projectile.height);
+                            
+                            // Reset shadow effects
+                            ctx.restore();
+                        } else {
+                            // Fallback with glow
+                            ctx.save();
+                            const projectileColor = config.colorTheme?.projectile || config.colorTheme?.player || '#FFFF00';
+                            ctx.shadowColor = projectileColor;
+                            ctx.shadowBlur = 15;
+                            ctx.shadowOffsetX = 0;
+                            ctx.shadowOffsetY = 0;
+                            
+                            ctx.fillStyle = projectileColor;
+                            ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
+                            
+                            ctx.restore();
+                        }
+                    });
+                    
+                    // Draw alien projectiles
+                    alienProjectiles.forEach(projectile => {
+                        // Use a different color for alien projectiles
+                        ctx.fillStyle = '#FF5555';
+                        ctx.beginPath();
+                        ctx.moveTo(projectile.x, projectile.y);
+                        ctx.lineTo(projectile.x + projectile.width, projectile.y);
+                        ctx.lineTo(projectile.x + projectile.width/2, projectile.y + projectile.height);
+                        ctx.closePath();
+                        ctx.fill();
+                    });
+                    
+                    // Draw explosions
+                    explosions.forEach(explosion => {
+                        // Scale the explosion based on frame
+                        const scale = 1 - (explosion.frame / explosion.maxFrames) * 0.5;
+                        const width = explosion.width * scale;
+                        const height = explosion.height * scale;
+                        const x = explosion.x + (explosion.width - width) / 2;
+                        const y = explosion.y + (explosion.height - height) / 2;
+                        
+                        if (explosionImage.complete && explosionImage.naturalWidth > 0) {
+                            ctx.imageSmoothingEnabled = true;
+                            ctx.imageSmoothingQuality = 'high';
+                            ctx.drawImage(explosionImage, x, y, width, height);
+                        } else {
+                            // Fallback
+                            ctx.fillStyle = `rgba(255, 255, 0, ${1 - explosion.frame / explosion.maxFrames})`;
+                            ctx.beginPath();
+                            ctx.arc(x + width/2, y + height/2, width/2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    });
+                    
+                    // Draw ship
+                    if (shipImage.complete && shipImage.naturalWidth > 0) {
+                        ctx.save();
+                        // Add shadow effect to player ship using theme color
+                        ctx.shadowColor = config.colorTheme?.player || config.colorTheme?.ship || '#3CB3E7';
+                        ctx.shadowBlur = 15;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 8;
+                        
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(shipImage, ship.x, ship.y, ship.width, ship.height);
+                        
+                        ctx.restore();
+                    } else {
+                        // Fallback with shadow
+                        ctx.save();
+                        const shipColor = config.colorTheme?.player || config.colorTheme?.ship || '#3CB3E7';
+                        ctx.shadowColor = shipColor;
+                        ctx.shadowBlur = 15;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 8;
+                        
+                        ctx.fillStyle = shipColor;
+                        ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
+                        
+                        ctx.restore();
+                    }
+                }
+                
+                // Game loop
+                function gameLoop() {
+                    if (gameRunning) {
+                        update();
+                    }
+                    draw();
+                    requestAnimationFrame(gameLoop);
+                }
+                
+                // Initialize lastFrameTime when starting
+                lastFrameTime = Date.now();
+                
+                // Wait for images to load
+                let imagesLoaded = 0;
+                const requiredImages = 3; // ship, alien, projectile
+                
+                function checkImagesLoaded() {
+                    imagesLoaded++;
+                    if (imagesLoaded === requiredImages) {
+                        // All images loaded, enable start button
+                        startButton.disabled = false;
+                    }
+                }
+                
+                shipImage.onload = checkImagesLoaded;
+                alienImage.onload = checkImagesLoaded;
+                projectileImage.onload = checkImagesLoaded;
+                explosionImage.onload = () => {}; // Optional image
+                
+                // Handle image load errors - continue with fallbacks
+                shipImage.onerror = checkImagesLoaded;
+                alienImage.onerror = checkImagesLoaded;
+                projectileImage.onerror = checkImagesLoaded;
+                explosionImage.onerror = () => {};
+                
+                // Initialize game by setting up the canvas
+                resizeCanvas();
+            }
+        });
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"9c18ba9668066103","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}},"version":"2025.9.1","token":"c9c3144107bb44248c5eca4c9bdb8ce9"}' crossorigin="anonymous"></script>
+</body>
+</html>
